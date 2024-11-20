@@ -3,8 +3,9 @@ import sys
 import socket
 import threading
 import pyaml
+import json
+from datetime import datetime
 from time import sleep
-
 
 """
 Quorus is an attempt at a lightweight and containerizable
@@ -12,26 +13,43 @@ quorum algorithm for use in high availability servers.
 """
 
 GLOBALS = {
+    "STATUS": "",
+    "ROLE": "",
     "PORT": 50515,
-    "ADDRESS": socket.gethostbyname(socket.gethostname)
+    "ADDRESS": socket.gethostbyname(socket.gethostname),
+    "DEFAULT_TIMEOUT": 5,
+    "LOG_PATH": "",
+    "HELLO_INTERVAL": 0.5,
 }
 
+def logger() -> None:
+    pass
 
-# Wait for startup
+def send_hello() -> None:
+    hello_msg = {
+            "status": GLOBALS["STATUS"],
+            "role": GLOBALS["ROLE"],
+            "sender": GLOBALS["ADDRESS"]
+        } 
 
-# Initialize some settings
-
-# Listen for a "Hello" message from something on the config file
-
-# if no message then it promotes itself to a role on the config file 
-
-# If message then it assigns itself a role according to the rules of the config file
-
-def initialize() -> None:
     while True:
-       s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-       s.bind((GLOBALS["ADDRESS"], GLOBALS["PORT"]))
-       s.listen()
+        hello_msg["time_stamp"] = str(datetime.now())
+        serialized_msg = json.dump(hello_msg)
+        client_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        client_sock.sendto(serialized_msg ,"<broadcast>", GLOBALS["PORT"])
+        sleep(GLOBALS["HELLO_INTERVAL"])
+
+def listen_for_hello() -> None:
+    serv_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    serv_sock.bind((GLOBALS["ADDRESS"], GLOBALS["PORT"]))
+    serv_sock.listen()
+
+    clients = []
+
+    try:
+        
+    except:
+        pass
 
 def main() -> None:
     pass
