@@ -1,7 +1,7 @@
 import threading
 import socket
 import json
-from datetime.datetime import now
+from datetime import datetime
 
 class Server:
     
@@ -16,7 +16,7 @@ class Server:
     def send_msg(self, message_dict) -> None:
         if message_dict["TYPE"] == "heartbeat":
             while True:
-                message_dict["TIME_STAMP"] = str(now())
+                message_dict["TIME_STAMP"] = str(datetime.now())
                 
                 ser_message = json.loads(message_dict)
 
