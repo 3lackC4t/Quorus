@@ -1,10 +1,17 @@
-import FireTeam.BaseServer
+from FireTeam.BaseServer import Server
+
 
 def main() -> None:
-    new_serv = FireTeam.BaseServer.Server()
-    type = input("Server or client?: [s/c]")
-    if type == 's':
-        new_serv.recv_msg()
+    server1 = Server()
+    server1._name = "Server1"
+    server1._default_port = 50515
+
+    server2 = Server()
+    server2._name = "Server2"
+    server2._default_port = 50516
+
+    server1.start()
+    server2.start()
 
 if __name__ == "__main__":
     main()
