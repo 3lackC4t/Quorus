@@ -10,6 +10,7 @@ def main() -> None:
     server2.default_port = 50516
 
     threading.Thread(target=server1.listen, daemon=False).start()
+    threading.Thread(target=server2.listen, daemon=False).start()
     threading.Thread(target=server2.send_msg(server1.address, server1.default_port, {
         "ID": server2.id,
         "ADDRESS": server2.address,
@@ -17,30 +18,15 @@ def main() -> None:
         "ROLE": server2.current_role,
         "MSG_TYPE": "TEST"
     }), daemon=False).start()
-    sleep(1)
-    threading.Thread(target=server2.send_msg(server1.address, server1.default_port, {
+
+    threading.Thread(target=server1.send_msg(server1.address, server1.default_port, {
         "ID": server2.id,
         "ADDRESS": server2.address,
         "PORT": server2.default_port,
         "ROLE": server2.current_role,
         "MSG_TYPE": "TEST"
     }), daemon=False).start()
-    sleep(1)
-    threading.Thread(target=server2.send_msg(server1.address, server1.default_port, {
-        "ID": server2.id,
-        "ADDRESS": server2.address,
-        "PORT": server2.default_port,
-        "ROLE": server2.current_role,
-        "MSG_TYPE": "TEST"
-    }), daemon=False).start()
-    sleep(1)
-    threading.Thread(target=server2.send_msg(server1.address, server1.default_port, {
-        "ID": server2.id,
-        "ADDRESS": server2.address,
-        "PORT": server2.default_port,
-        "ROLE": server2.current_role,
-        "MSG_TYPE": "TEST"
-    }), daemon=False).start()
+    
 
 
 if __name__ == "__main__":
