@@ -26,9 +26,11 @@ log = {
 class Node:
     def __init__(self):
         self.default_port = 50515
-        self.address = "127.0.0.1" 
+        self.address = "127.0.0.1"
+        self.will_broadcast = False         
         self.default_buffer = 4096
         self.default_timeout = 10
+        self.default_heartbeat_rate = 0.1
 
         self.id = f"{self.address}:{self.default_port}"
         self.current_term = 0
@@ -76,8 +78,10 @@ class Node:
             match msg_type:
                 case 'APPEND_ENTRIES':
                     self.election_timer_reset()
+                    self.replicate_log(data)
                 case 'VOTE_REQUEST':
-                    self.vote_request(self.id, self.current_term, len(self.log), )
+                    response = self.vote_request(data['ID'], data['CURRENT_TERM'], data['LOG_LENGTH'], data['LAST_TERM'])
+                    self.send_msg(sender, data['PORT'], response)
                 case 'DISCOVERY':
                     self.acknowledge()
     
@@ -97,11 +101,17 @@ class Node:
                     self.vote_request(self.id, self.current_term, len(self.log), )
                 case 'APPEND_ENTRIES':
                     self.current_role = 'FOLLOWER'
+                    self.update_nodes()
+                case 'DISCOVERY':
+                    self.acknowledge()
 
         except socket.timeout:
             self.election_timeout()       
 
     def leader_logic(self, receiver):
+        if not hasattr(self, "heartbeat_thread") or not self.heartbeat_thread.is_alive():
+            heartbeat_thread = threading.Thread(target=self.heart_beat, daemon=False).start()
+
         try:
             data, sender = receiver.recvfrom(self.default_buffer)
             data = self._handler.de_serialize(data, sender)
@@ -118,6 +128,7 @@ class Node:
             pass
 
     def acknowledge(self):
+        pass
 
     def send_msg(self, address, port, data) -> None:
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sender:
@@ -130,8 +141,12 @@ class Node:
             'PORT': self.default_port,
             'MSG_TYPE': "DISCOVERY",
         }
-        for node in self.nodes_expected:
-            self.send_msg(node['ADDRESS'], node['PORT'], msg)
+
+        if self.will_broadcast:
+            self.send_msg("0.0.0.0", self.default_port, msg)
+        else:
+            for node in self.nodes_expected:
+                self.send_msg(node['ADDRESS'], node['PORT'], msg)
 
     def election_timeout(self):
         print(f"Timeout Detected on node {self.id}. Performing Election")
@@ -251,7 +266,13 @@ class Node:
         if self.current_role != "LEADER":
             return
         
-
+    def heart_beat(self): 
+        while self.current_role == 'LEADER':
+            try:
+                self.append_entries()
+                sleep(self.default_heartbeat_rate)
+            except Exception as e:
+                print(f"Error: {e}")
 
     def election_timer_reset(self):
         pass
